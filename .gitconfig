@@ -1,0 +1,9 @@
+[user]
+	email = 36738506+smanjo@users.noreply.github.com
+	name = Scott M
+[push]
+	default = current
+[alias]
+	s = status
+	l = log --stat
+	d = diff
