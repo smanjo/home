@@ -75,6 +75,10 @@ xterm*|rxvt*)
     ;;
 esac
 
+# colored GCC warnings and errors
+#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+
+# Set our default ls options (used below in alias), see ls(1).
 LS_OPTIONS=("--almost-all" \
                 "-X" \
                 "--human-readable" \
@@ -84,30 +88,15 @@ LS_OPTIONS=("--almost-all" \
                 "--indicator-style=slash" \
                 "--group-directories-first" \
                 "--time-style=+%Y%m%d.%H%M%S")
+
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
     LS_OPTIONS+=("--color=auto")
-    #alias dir='dir --color=auto'
-    #alias vdir='vdir --color=auto'
-
-    #alias grep='grep --color=auto'
-    #alias fgrep='fgrep --color=auto'
-    #alias egrep='egrep --color=auto'
-fi
-
-# colored GCC warnings and errors
-#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+ fi
 
 LS_COLORS='rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;31:';
 export LS_COLORS
-
-# some more ls aliases
-alias ls="/bin/ls ${LS_OPTIONS[@]}"
-alias ll='ls -l'
-alias lla='ll --all'
-alias l='ls -C'
-alias la='l --all'
 
 # Alias definitions.
 # You may want to put all your additions into a separate file like
@@ -132,12 +121,25 @@ fi
 # Add pip3 local install path
 PATH="~/bin:~/.local/bin:${PATH}"
 
-# Some more alias to avoid making mistakes:
+# ls aliases
+alias ls="/bin/ls ${LS_OPTIONS[@]}"
+alias ll='ls -l'
+alias lla='ll --all'
+alias l='ls -C'
+alias la='l --all'
+
+# alias to avoid making mistakes:
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
+
 alias chmod='/bin/chmod --verbose'
 alias grep='/bin/grep --color=always'
 
-export EDITOR=/usr/bin/emacs
+# Our editor of choice.
+if [[ -f /usr/bin/emacs ]]; then
+    export EDITOR=/usr/bin/emacs
+fi
+
+# Don't keep history file for less(1).
 export LESSHISTFILE=/dev/null

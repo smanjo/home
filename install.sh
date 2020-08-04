@@ -6,7 +6,16 @@ set -u
 # in user's home directory.
 
 # keep this list updated with all files to install
-INSTALL=(".bashrc" ".bash_profile" ".curlrc" ".emacs" ".gitconfig" ".profile" ".wgetrc")
+INSTALL=(
+    ".bashrc"
+    ".bash_logout"
+    ".bash_profile"
+    ".curlrc"
+    ".emacs"
+    ".gitconfig"
+    ".profile"
+    ".wgetrc"
+)
 
 # grab some stuff from the environment.
 RUN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
