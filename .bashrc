@@ -143,3 +143,22 @@ fi
 
 # Don't keep history file for less(1).
 export LESSHISTFILE=/dev/null
+
+# git global configs
+GITBIN=$(/usr/bin/which git)
+if [[ ! -z "${GITBIN}" ]] && [[ -f "${GITBIN}" ]]; then
+    "${GITBIN}" config --global alias.s "status"
+    "${GITBIN}" config --global alias.l "log --stat"
+    "${GITBIN}" config --global alias.d "diff"
+    "${GITBIN}" config --global push.default "current"
+    "${GITBIN}" config --global core.editor "emacs"
+
+    GITUSEREMAIL=$("${GITBIN}" config --get "user.email" )
+    if [[ -z "${GITUSEREMAIL}" ]]; then
+        echo "bashrc: global git-config does not comtain user.email. Consider setting with: ${GITBIN} config --global user.email \"you@example.com\""
+    fi
+    GITUSERNAME=$("${GITBIN}" config --get "user.name" )
+    if [[ -z "${GITUSERNAME}" ]]; then
+        echo "bashrc: global git-config does not comtain user.name. Consider setting with: ${GITBIN} config --global user.name \"Your Name\""
+    fi
+fi
