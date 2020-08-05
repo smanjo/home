@@ -12,7 +12,6 @@ INSTALL=(
     ".bash_profile"
     ".curlrc"
     ".emacs"
-    ".gitconfig"
     ".profile"
     ".wgetrc"
 )
