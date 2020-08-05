@@ -54,6 +54,16 @@ for INSTALL_FILE in "${INSTALL[@]}"; do
             echo "skipping install: ${SRC_PATH}"
         else
             # install time!
+            if [[ -f "/usr/bin/which" ]]; then
+                REALPATH_BIN=$( /usr/bin/which realpath )
+                if [[ ! -z "${REALPATH_BIN}" ]]; then
+                    RELATIVE_SRC=$( "${REALPATH_BIN}" --relative-to="${DST_DIR}" "${SRC_PATH}" )
+                    if [[ ! -z "${RELATIVE_SRC}" ]]; then
+                        # Replace path with relative path
+                        SRC_PATH="${RELATIVE_SRC}"
+                    fi
+                fi
+            fi
             echo "installing ${DST_PATH}"
             ln -s "${SRC_PATH}" "${DST_PATH}"
         fi
