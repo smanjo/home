@@ -30,8 +30,12 @@ shopt -s checkwinsize
 # make less more friendly for non-text input files, see lesspipe(1)
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
-# Options which are passed to less automatically, see less(1)
+# custom less options go in LESS env variable, see less(1).
+#   --RAW-CONTROL-CHARS: allow ANSI "color" escape sequences in output
 export LESS="--RAW-CONTROL-CHARS"
+
+# Don't keep history file for less(1).
+export LESSHISTFILE=/dev/null
 
 # set variable identifying the chroot you work in (used in the prompt below)
 if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
@@ -93,7 +97,7 @@ LS_OPTIONS=("--almost-all" \
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
     LS_OPTIONS+=("--color=auto")
- fi
+fi
 
 LS_COLORS='rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;31:';
 export LS_COLORS
@@ -102,7 +106,6 @@ export LS_COLORS
 # You may want to put all your additions into a separate file like
 # ~/.bash_aliases, instead of adding them here directly.
 # See /usr/share/doc/bash-doc/examples in the bash-doc package.
-
 if [ -f ~/.bash_aliases ]; then
     . ~/.bash_aliases
 fi
@@ -118,8 +121,15 @@ if ! shopt -oq posix; then
   fi
 fi
 
-# Add pip3 local install path
-PATH="~/bin:~/.local/bin:${PATH}"
+# Add local home bin to path
+if [[ -d "~/bin" ]]; then
+    PATH="~/bin:${PATH}"
+fi
+
+# Add pip3 local install to path
+if [[ -d "~/.local/bin" ]]; then
+    PATH="~/.local/bin:${PATH}"
+fi
 
 # ls aliases
 alias ls="/bin/ls ${LS_OPTIONS[@]}"
@@ -136,13 +146,10 @@ alias mv='mv -i'
 alias chmod='/bin/chmod --verbose'
 alias grep='/bin/grep --color=always'
 
-# Our editor of choice.
+# our editor of choice.
 if [[ -f /usr/bin/emacs ]]; then
     export EDITOR=/usr/bin/emacs
 fi
-
-# Don't keep history file for less(1).
-export LESSHISTFILE=/dev/null
 
 # git global configs
 GITBIN=$(/usr/bin/which git)
