@@ -1,11 +1,19 @@
-# ~/.bashrc: executed by bash(1) for non-login shells.
-# see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
-# for examples
+# https://www.gnu.org/software/bash/manual/html_node/Bash-Startup-Files.html
+#
+# .bashrc: directly invoked for interactive bash NON-LOGIN shells,
+#          and indirectly from .profile (interactive bash login shells)
+#
+# Best used for: aliases, functions, and bash-specific setup
 
-# If not running interactively, don't do anything
+# Not bash, do nothing
+if [ -z "$BASH_VERSION" ]; then
+    return
+fi
+
+# Not running interactively, do nothing
 case $- in
-    *i*) ;;
-      *) return;;
+    *i*) ;;     # shell is interactive
+    *) return;; # shell is not interactive
 esac
 
 # don't put duplicate lines or lines starting with space in the history.
@@ -119,16 +127,6 @@ if ! shopt -oq posix; then
   elif [ -f /etc/bash_completion ]; then
     . /etc/bash_completion
   fi
-fi
-
-# Add local home bin to path
-if [[ -d "~/bin" ]]; then
-    PATH="~/bin:${PATH}"
-fi
-
-# Add pip3 local install to path
-if [[ -d "~/.local/bin" ]]; then
-    PATH="~/.local/bin:${PATH}"
 fi
 
 # ls aliases
