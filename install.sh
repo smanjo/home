@@ -2,27 +2,53 @@
 set -e
 set -u
 
-# installs symlinks to the files in this directory which need to be installed
-# in user's home directory.
+#
+# install symlinks to the files in this directory in user's home directory. attempts
+# to move conflicting files to a backup file before linking.
+#
 
-# keep this list updated with all files to install
+# keep INSTALL list updated with all files to install. Use "<file>=<binary>" syntax to
+# annotate executable using the installed file.
 INSTALL=(
-    ".bash_logout"
     ".bash_profile"
-    ".bashrc"
-    ".curlrc"
-    ".digrc"
-    ".emacs"
     ".profile"
-    ".wgetrc"
+    ".bashrc"
+    ".bash_logout"
+    ".curlrc=curl"
+    ".digrc=dig"
+    ".emacs=emacs"
+    ".wgetrc=wget"
 )
 
 # grab some stuff from the environment.
 RUN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 DST_DIR="${HOME}"
 
+ESC=$'\033'
+CLR_GREEN="${ESC}[92m"
+CLR_RED="${ESC}[91m"
+CLR_RESET="${ESC}[0m"
+
+if [[ -f "/usr/bin/which" ]]; then
+    WHICH_BIN="/usr/bin/which"
+else
+    WHICH_BIN=""
+fi
+
+if [[ ! -z "${WHICH_BIN}" ]]; then
+    REALPATH_BIN=$( /usr/bin/which realpath )
+else
+    REALPATH_BIN=""
+fi
+
 echo "starting install of ${#INSTALL[@]} files..."
 for INSTALL_FILE in "${INSTALL[@]}"; do
+    if [[ "${INSTALL_FILE}" =~ "=" ]]; then
+        INSTALL_REQUIRED_BIN="${INSTALL_FILE#*=}"
+        INSTALL_FILE="${INSTALL_FILE%=*}"
+    else
+        INSTALL_REQUIRED_BIN=""
+    fi
     SRC_PATH="${RUN_DIR}/${INSTALL_FILE}"
     if [[ ! -f "${SRC_PATH}" ]]; then
         # um, we have a problem. maybe need to update INSTALL list?
@@ -54,18 +80,30 @@ for INSTALL_FILE in "${INSTALL[@]}"; do
             # if the destination is (still) not clear, don't install
             echo "skipping install: ${SRC_PATH}"
         else
-            # install time!
-            if [[ -f "/usr/bin/which" ]]; then
-                REALPATH_BIN=$( /usr/bin/which realpath )
-                if [[ ! -z "${REALPATH_BIN}" ]]; then
-                    RELATIVE_SRC=$( "${REALPATH_BIN}" --relative-to="${DST_DIR}" "${SRC_PATH}" )
-                    if [[ ! -z "${RELATIVE_SRC}" ]]; then
-                        # Replace path with relative path
-                        SRC_PATH="${RELATIVE_SRC}"
-                    fi
+            # Replace path with relative path, if possible
+            if [[ ! -z "${REALPATH_BIN}" ]]; then
+                RELATIVE_SRC=$( "${REALPATH_BIN}" --relative-to="${DST_DIR}" "${SRC_PATH}" )
+                if [[ ! -z "${RELATIVE_SRC}" ]]; then
+                    SRC_PATH="${RELATIVE_SRC}"
                 fi
             fi
-            echo "installing ${DST_PATH}"
+            # When installing files which have a required binary, add additional essaging
+            if [[ ! -z "${INSTALL_REQUIRED_BIN}" ]] && [[ ! -z "${WHICH_BIN}" ]]; then
+                INSTALL_RUNTIME=$("${WHICH_BIN}" "${INSTALL_REQUIRED_BIN}" || echo)
+                if [[ -z "${INSTALL_RUNTIME}" ]] || [[ ! -f "${INSTALL_RUNTIME}" ]]; then
+                    # Runtime for this install does not exist
+                    INSTALL_MESSAGE="${CLR_RED}not found: ${INSTALL_REQUIRED_BIN}"
+                else
+                    # Runtime exists
+                    INSTALL_MESSAGE="${CLR_GREEN}used by: ${INSTALL_RUNTIME}"
+                fi
+                INSTALL_MESSAGE="  [ ${INSTALL_MESSAGE}${CLR_RESET} ]"
+            else
+                INSTALL_MESSAGE=""
+            fi
+
+            # install time!
+            echo "installing ${DST_PATH}${INSTALL_MESSAGE}"
             ln -s "${SRC_PATH}" "${DST_PATH}"
         fi
     fi
