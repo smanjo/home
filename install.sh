@@ -7,10 +7,11 @@ set -u
 
 # keep this list updated with all files to install
 INSTALL=(
-    ".bashrc"
     ".bash_logout"
     ".bash_profile"
+    ".bashrc"
     ".curlrc"
+    ".digrc"
     ".emacs"
     ".profile"
     ".wgetrc"
