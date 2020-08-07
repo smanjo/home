@@ -24,10 +24,22 @@ INSTALL=(
 RUN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 DST_DIR="${HOME}"
 
-ESC=$'\033'
-CLR_GREEN="${ESC}[92m"
-CLR_RED="${ESC}[91m"
-CLR_RESET="${ESC}[0m"
+# Setup color codes when possible
+CLR_ESC=""
+CLR_GREEN=""
+CLR_RED=""
+CLR_YELLOW=""
+CLR_RESET=""
+if /usr/bin/test -t 1; then # test that file descriptor 1 (stdout) is a real term
+    TERM_NCOLORS=$(/usr/bin/tput colors)
+    if [[ ! -z "${TERM_NCOLORS}" ]] && [[ "${TERM_NCOLORS}" -gt 8 ]]; then
+        CLR_ESC=$'\033'
+        CLR_GREEN="${CLR_ESC}[92m"
+        CLR_RED="${CLR_ESC}[91m"
+        CLR_YELLOW="${CLR_ESC}[93m"
+        CLR_RESET="${CLR_ESC}[0m"
+    fi
+fi
 
 if [[ -f "/usr/bin/which" ]]; then
     WHICH_BIN="/usr/bin/which"
@@ -68,7 +80,7 @@ for INSTALL_FILE in "${INSTALL[@]}"; do
                     echo "ERROR, unable to backup existing home file: ${DST_PATH}"
                 else
                     # move existing file to backup
-                    echo "creating backup of existing file: ${DST_PATH} -> ${BAK_PATH}"
+                    echo "...creating backup of existing file: ${CLR_YELLOW}${DST_PATH} -> ${BAK_PATH}${CLR_RESET}"
                     /bin/mv -f "${DST_PATH}" "${BAK_PATH}"
                 fi
             else

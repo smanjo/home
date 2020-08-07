@@ -5,12 +5,61 @@
 #
 #  Best used for: shell-agnostic setup (eg. umask and PATH)
 
-# Print custom welcome/login message
-echo -e "\e[38;5;177m" # Light purple
+# Setup color codes
+CLR_ESC=""
+CLR_RESET=""
+
+CLR_BLACK=""
+CLR_RED=""
+CLR_GREEN=""
+CLR_YELLOW=""
+CLR_BLUE=""
+CLR_MAGENTA=""
+CLR_CYAN=""
+CLR_WHITE=""
+
+CLR_GREY=""
+CLR_BR_RED=""
+CLR_BR_GREEN=""
+CLR_BR_YELLOW=""
+CLR_BR_BLUE=""
+CLR_BR_MAGENTA=""
+CLR_BR_CYAN=""
+CLR_BR_WHITE=""
+
+if /usr/bin/test -t 1; then # test that file descriptor 1 (stdout) is a real term
+    TERM_NCOLORS=$(/usr/bin/tput colors)
+    if [[ ! -z "${TERM_NCOLORS}" ]] && [[ "${TERM_NCOLORS}" -gt 8 ]]; then
+        # We have a color term, set codes
+        CLR_ESC=$'\033'
+        CLR_RESET="${CLR_ESC}[0m"
+
+        CLR_BLACK="${CLR_ESC}[30m"
+        CLR_RED="${CLR_ESC}[31m"
+        CLR_GREEN="${CLR_ESC}[32m"
+        CLR_YELLOW="${CLR_ESC}[33m"
+        CLR_BLUE="${CLR_ESC}[34m"
+        CLR_MAGENTA="${CLR_ESC}[35m"
+        CLR_CYAN="${CLR_ESC}[36m"
+        CLR_WHITE="${CLR_ESC}[37m"
+
+        CLR_GREY="${CLR_ESC}[90m"
+        CLR_BR_RED="${CLR_ESC}[91m"
+        CLR_BR_GREEN="${CLR_ESC}[92m"
+        CLR_BR_YELLOW="${CLR_ESC}[93m"
+        CLR_BR_BLUE="${CLR_ESC}[94m"
+        CLR_BR_MAGENTA="${CLR_ESC}[95m"
+        CLR_BR_CYAN="${CLR_ESC}[96m"
+        CLR_BR_WHITE="${CLR_ESC}[97m"
+    fi
+fi
+
+# Print custom welcome/login message (in 8-bit color!)
+echo -e "${CLR_BR_GREEN}"
 /usr/bin/w
-echo -e "\e[38;5;227m" # Light yellow
+echo -e "${CLR_BR_YELLOW}"
 /bin/df -h -x tmpfs -x udev -x devtmpfs
-echo -e "\e[0m" # Reset colors
+echo -e "${CLR_RESET}"
 
 # don't trust umask from /etc/profile, always set it here
 if [ "$(id -gn)" = "$(id -un)" -a $EUID -gt 99 ] ; then
