@@ -72,6 +72,8 @@ else
     umask 022
 fi
 
+export LC_COLLATE=POSIX
+
 # set PATH so it includes user's private bin if it exists
 if [ -d "${HOME}/bin" ]; then
     export PATH="${HOME}/bin:${PATH}"
