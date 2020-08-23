@@ -105,3 +105,8 @@
 (set-face-attribute 'web-mode-block-delimiter-face   nil :foreground "DarkSeaGreen")
 (set-face-attribute 'web-mode-block-control-face     nil :foreground "SeaGreen")
 (set-face-attribute 'web-mode-variable-name-face     nil :foreground "Burlywood")
+
+(add-hook 'python-mode-hook
+          (lambda ()
+            (setq tab-width 4)
+            (setq python-indent-offset 4)))
