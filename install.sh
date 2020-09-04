@@ -18,13 +18,14 @@ INSTALL=(
     ".digrc=dig"
     ".emacs=emacs"
     ".wgetrc=wget"
+    ".emacs.d/lisp/web-mode.el"
 )
 
 # grab some stuff from the environment.
 RUN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-DST_DIR="${HOME}"
+DST_TOP="${HOME}"
 
-# Setup color codes when possible
+# setup color codes when possible
 CLR_ESC=""
 CLR_GREEN=""
 CLR_RED=""
@@ -67,8 +68,12 @@ for INSTALL_FILE in "${INSTALL[@]}"; do
         echo "INTERNAL ERROR, install source file not found: ${SRC_PATH}"
         exit 1
     else
-        DST_PATH="${DST_DIR}/${INSTALL_FILE}"
+        DST_PATH="${DST_TOP}/${INSTALL_FILE}"
+        # install file may contain subdirs, so get the destination dir
+        DST_DIR=$( dirname "${DST_PATH}" )
+
         if [[ -e "${DST_PATH}" ]]; then
+            # when the destination exists, handle some situations
             if [[ -h "${DST_PATH}" ]]; then
                 # symlink already exists: remove symlink
                 /bin/rm "${DST_PATH}"
@@ -80,17 +85,27 @@ for INSTALL_FILE in "${INSTALL[@]}"; do
                     echo "ERROR, unable to backup existing home file: ${DST_PATH}"
                 else
                     # move existing file to backup
-                    echo "...creating backup of existing file: ${CLR_YELLOW}${DST_PATH} -> ${BAK_PATH}${CLR_RESET}"
                     /bin/mv -f "${DST_PATH}" "${BAK_PATH}"
+                    echo "...created backup of existing file:" \
+                         "${CLR_YELLOW}${DST_PATH} -> ${BAK_PATH}${CLR_RESET}"
                 fi
             else
                 # don't try to install over non-file
                 echo "ERROR, found non-file: ${DST_PATH}"
             fi
+        else
+            if [[ ! -e "${DST_DIR}" ]]; then
+                /bin/mkdir -p "${DST_DIR}"
+            fi
         fi
-        if [[ -e "${DST_PATH}" ]]; then
+
+        if [[ ! -d "${DST_DIR}" ]]; then
+            echo "ERROR: destination dir is invalid or unable to be created: ${DST_DIR}"
+            echo "ERROR: skipping install: ${SRC_PATH}"
+        elif [[ -e "${DST_PATH}" ]]; then
             # if the destination is (still) not clear, don't install
-            echo "skipping install: ${SRC_PATH}"
+            echo "ERROR: destination is (still) not clear: ${DST_PATH}"
+            echo "ERROR: skipping install: ${SRC_PATH}"
         else
             # Replace path with relative path, if possible
             if [[ ! -z "${REALPATH_BIN}" ]]; then
@@ -99,7 +114,7 @@ for INSTALL_FILE in "${INSTALL[@]}"; do
                     SRC_PATH="${RELATIVE_SRC}"
                 fi
             fi
-            # When installing files which have a required binary, add additional essaging
+            # When installing files which have a required binary, add additional message
             if [[ ! -z "${INSTALL_REQUIRED_BIN}" ]] && [[ ! -z "${WHICH_BIN}" ]]; then
                 INSTALL_RUNTIME=$("${WHICH_BIN}" "${INSTALL_REQUIRED_BIN}" || echo)
                 if [[ -z "${INSTALL_RUNTIME}" ]] || [[ ! -f "${INSTALL_RUNTIME}" ]]; then
