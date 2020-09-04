@@ -22,7 +22,6 @@
 (add-to-list 'auto-save-file-name-transforms
              `(".*" ,(concat autosave-dir "/\\1") t) 'append)
 
-
 (setq make-backup-files t
       backup-by-copying t
       version-control t
@@ -110,3 +109,13 @@
           (lambda ()
             (setq tab-width 4)
             (setq python-indent-offset 4)))
+
+;; consider js2-mode? (setq-default js2-basic-offset 2)
+
+(add-hook 'js-mode-hook
+          (lambda ()
+            (setq js-indent-level 2)))
+
+(load-theme 'tango-dark)
+(add-to-list 'default-frame-alist '(background-color . "black"))
+(add-to-list 'default-frame-alist '(cursor-color . "brightgreen"))
