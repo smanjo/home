@@ -12,8 +12,6 @@ htop
 iftop
 locales
 pwgen
-python3
-python3-pip
 rsync
 unattended-upgrades
 wget
