@@ -5,6 +5,7 @@
 #
 #  Best used for: shell-agnostic setup (eg. umask and PATH)
 
+##############################################################################
 # Setup color codes
 CLR_ESC=""
 CLR_RESET=""
@@ -54,12 +55,8 @@ if /usr/bin/test -t 1; then # test that file descriptor 1 (stdout) is a real ter
     fi
 fi
 
-# Print custom welcome/login message (in 8-bit color!)
-echo -e "${CLR_BR_GREEN}"
-/usr/bin/w
-echo -e "${CLR_BR_YELLOW}"
-/bin/df -h -x tmpfs -x udev -x devtmpfs
-echo -e "${CLR_RESET}"
+##############################################################################
+# Basic environment setup
 
 # don't trust umask from /etc/profile, always set it here
 if [ "$(id -gn)" = "$(id -un)" -a $EUID -gt 99 ] ; then
@@ -98,4 +95,20 @@ if [ -n "$BASH_VERSION" ]; then
     if [ -s "$HOME/.bashrc" ]; then
         . "$HOME/.bashrc"
     fi
+fi
+
+##############################################################################
+# Custom welcome/login messages
+
+# Show who is logged on and what they are doing
+echo -e "\n${CLR_BR_GREEN}`/usr/bin/w`${CLR_RESET}"
+# Report file system disk space usage (excluding virtual devs)
+echo -e "\n${CLR_BR_YELLOW}`/bin/df -h -x tmpfs -x udev -x devtmpfs`${CLR_RESET}"
+# Warm about required reboot, if needed
+if [[ -f /var/run/reboot-required ]]; then
+    if [[ -f /var/run/reboot-required.pkgs ]]; then
+        echo -e "\n${CLR_BR_BLUE}Found packages waiting for reboot:" \
+                "\n`sed -e 's/^/  /' /var/run/reboot-required.pkgs`${CLR_RESET}"
+    fi
+    echo -e "\n${CLR_BR_RED}>>>>>>>>>>> REBOOT REQUIRED <<<<<<<<<<${CLR_RESET}"
 fi
