@@ -2,10 +2,12 @@
 set -e
 set -u
 
-#
-# install symlinks to the files in this directory in user's home directory. attempts
-# to move conflicting files to a backup file before linking.
-#
+# install.sh: setup user's home to my liking. has two main features:
+#     [1] checks system for listed packages (see packages.lst). these packages are intended to
+#         to be a baseline of packages wanted on all systems.
+#     [2] creates symlinks to config files in this directory from the user's home directory.
+#         will move conflicting files to .bak before linking. skips install if unable to
+#         preserve existing file(s).
 
 # keep INSTALL list updated with all files to install. Use "<file>=<binary>" syntax to
 # annotate executable using the installed file.
@@ -18,12 +20,22 @@ INSTALL=(
     ".digrc=dig"
     ".emacs=emacs"
     ".wgetrc=wget"
-    ".emacs.d/lisp/web-mode.el"
 )
 
 # grab some stuff from the environment.
 RUN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 DST_TOP="${HOME}"
+
+# check if some commands exist (allows graceful feature loss)
+if [[ -f "/usr/bin/which" ]]; then
+    WHICH_BIN="/usr/bin/which"
+    REALPATH_BIN=$(${WHICH_BIN} realpath)
+    DPKG_BIN=$(${WHICH_BIN} dpkg)
+else
+    WHICH_BIN=""
+    REALPATH_BIN=""
+    DPKG_BIN=""
+fi
 
 # setup color codes when possible
 CLR_ESC=""
@@ -42,19 +54,40 @@ if /usr/bin/test -t 1; then # test that file descriptor 1 (stdout) is a real ter
     fi
 fi
 
-if [[ -f "/usr/bin/which" ]]; then
-    WHICH_BIN="/usr/bin/which"
+# check our list of packages, if possible
+if [[ ! -z "${DPKG_BIN}" ]]; then
+    PKGS_FILE="${RUN_DIR}/packages.lst"
+    PKGS_COUNT=$(wc -l < "${PKGS_FILE}")
+    MISSING_COUNT=0
+    MISSING_PKGS=""
+    echo "checking ${PKGS_COUNT} packages..."
+    # loop through the packages. this requires a newline at the end of the packages file.
+    while IFS= read -r PKGNAME; do
+        # check if package is installed. we're only trying to give bare minimal package
+        # installed check, so we don't care about needed uprgades.
+        if ! "${DPKG_BIN}" -l "${PKGNAME}" >/dev/null 2>&1; then
+            echo "  ${CLR_RED}MISSING${CLR_RESET}   : ${PKGNAME}"
+            MISSING_COUNT=$((MISSING_COUNT + 1))
+            MISSING_PKGS="${MISSING_PKGS} ${PKGNAME}"
+        fi
+    done < "${PKGS_FILE}"
+    MISSING_PKGS="${MISSING_PKGS## }"
+
+    if [[ ${MISSING_COUNT} -eq 0 ]]; then
+        echo "no missing packages."
+    else
+        # if missing packages, give message with install command. DO NOT INSTALL.
+        # this script is intended to be lightweight and never require user input.
+        echo "missing ${MISSING_COUNT} packages, run this command to install:"
+        echo
+        echo "${CLR_YELLOW}sudo apt install ${MISSING_PKGS}${CLR_RESET}"
+        echo
+    fi
 else
-    WHICH_BIN=""
+    echo "unable to check packages (dpkg not found)."
 fi
 
-if [[ ! -z "${WHICH_BIN}" ]]; then
-    REALPATH_BIN=$( /usr/bin/which realpath )
-else
-    REALPATH_BIN=""
-fi
-
-echo "starting install of ${#INSTALL[@]} files..."
+echo "starting home setup (${#INSTALL[@]} files)..."
 for INSTALL_FILE in "${INSTALL[@]}"; do
     if [[ "${INSTALL_FILE}" =~ "=" ]]; then
         INSTALL_REQUIRED_BIN="${INSTALL_FILE#*=}"
@@ -70,7 +103,7 @@ for INSTALL_FILE in "${INSTALL[@]}"; do
     else
         DST_PATH="${DST_TOP}/${INSTALL_FILE}"
         # install file may contain subdirs, so get the destination dir
-        DST_DIR=$( dirname "${DST_PATH}" )
+        DST_DIR=$(dirname "${DST_PATH}")
 
         if [[ -e "${DST_PATH}" ]]; then
             # when the destination exists, handle some situations
@@ -101,15 +134,15 @@ for INSTALL_FILE in "${INSTALL[@]}"; do
 
         if [[ ! -d "${DST_DIR}" ]]; then
             echo "ERROR: destination dir is invalid or unable to be created: ${DST_DIR}"
-            echo "ERROR: skipping install: ${SRC_PATH}"
+            echo "ERROR: skipping file: ${SRC_PATH}"
         elif [[ -e "${DST_PATH}" ]]; then
             # if the destination is (still) not clear, don't install
             echo "ERROR: destination is (still) not clear: ${DST_PATH}"
-            echo "ERROR: skipping install: ${SRC_PATH}"
+            echo "ERROR: skipping file: ${SRC_PATH}"
         else
             # Replace path with relative path, if possible
             if [[ ! -z "${REALPATH_BIN}" ]]; then
-                RELATIVE_SRC=$( "${REALPATH_BIN}" --relative-to="${DST_DIR}" "${SRC_PATH}" )
+                RELATIVE_SRC=$("${REALPATH_BIN}" --relative-to="${DST_DIR}" "${SRC_PATH}")
                 if [[ ! -z "${RELATIVE_SRC}" ]]; then
                     SRC_PATH="${RELATIVE_SRC}"
                 fi
