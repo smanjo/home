@@ -4,24 +4,30 @@ This is my setup on new hosts:
 	~ $ cd dev
 	~/dev $ git clone https://github.com/smanjo/home.git
 	Cloning into 'home'...
-	remote: Enumerating objects: 61, done.
-	remote: Counting objects: 100% (61/61), done.
-	remote: Compressing objects: 100% (43/43), done.
-	remote: Total 61 (delta 30), reused 49 (delta 18), pack-reused 0
-	Unpacking objects: 100% (61/61), done.
-	~/dev $ cd home
+	remote: Enumerating objects: 95, done.
+	remote: Counting objects: 100% (95/95), done.
+	remote: Compressing objects: 100% (68/68), done.
+	remote: Total 95 (delta 46), reused 71 (delta 26), pack-reused 0
+	Unpacking objects: 100% (95/95), done.
+	~/dev $ cd home/
 	~/dev/home $ ./install.sh
-	starting install of 8 files...
-	installing /home/user/.bash_profile
-	...creating backup of existing file: /home/user/.profile -> /home/user/.profile.bak
-	installing /home/user/.profile
-	...creating backup of existing file: /home/user/.bashrc -> /home/user/.bashrc.bak
-	installing /home/user/.bashrc
-	...creating backup of existing file: /home/user/.bash_logout -> /home/user/.bash_logout.bak
-	installing /home/user/.bash_logout
-	installing /home/user/.curlrc  [ used by: /usr/bin/curl ]
-	installing /home/user/.digrc  [ used by: /usr/bin/dig ]
-	...creating backup of existing file: /home/user/.emacs -> /home/user/.emacs.bak
-	installing /home/user/.emacs  [ used by: /usr/bin/emacs ]
-	installing /home/user/.wgetrc  [ not found: wget ]
-	done.
+	checking installed setup (18 packages)...
+	  MISSING   : curl
+	  MISSING   : htop
+	  MISSING   : iftop
+	  MISSING   : wget
+	missing 4 package(s), run this command to install:
+	
+	sudo apt install curl htop iftop wget
+	
+	checking home setup (9 files)...
+	  INSTALLED: /home/user/.bash_profile
+	  INSTALLED: /home/user/.profile [ backup created: /home/user/.profile.bak ]
+	  INSTALLED: /home/user/.bashrc [ backup created: /home/user/.bashrc.bak ]
+	  INSTALLED: /home/user/.bash_logout [ backup created: /home/user/.bash_logout.bak ]
+	  INSTALLED: /home/user/.inputrc
+	  INSTALLED: /home/user/.curlrc [ not found: curl ]
+	  INSTALLED: /home/user/.digrc
+	  INSTALLED: /home/user/.emacs [ backup created: /home/user/.emacs.bak ]
+	  INSTALLED: /home/user/.wgetrc [ not found: wget ]
+	home setup complete: 9 newly installed, 0 skipped (already setup).
