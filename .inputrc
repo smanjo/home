@@ -1,0 +1,8 @@
+set colored-completion-prefix on
+set colored-stats on
+set completion-prefix-display-length 2
+set completion-query-items 48
+set editing-mode emacs
+set keymap emacs
+set print-completions-horizontally on
+set show-all-if-ambiguous on

@@ -16,6 +16,7 @@ INSTALL=(
     ".profile"
     ".bashrc"
     ".bash_logout"
+    ".inputrc"
     ".curlrc=curl"
     ".digrc=dig"
     ".emacs=emacs"
