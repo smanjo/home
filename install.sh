@@ -61,7 +61,7 @@ if [[ ! -z "${DPKG_BIN}" ]]; then
     PKGS_COUNT=$(wc -l < "${PKGS_FILE}")
     MISSING_COUNT=0
     MISSING_PKGS=""
-    echo "checking ${PKGS_COUNT} packages..."
+    echo "checking installed setup (${PKGS_COUNT} packages)..."
     # loop through the packages. this requires a newline at the end of the packages file.
     while IFS= read -r PKGNAME; do
         # check if package is installed. we're only trying to give bare minimal package
@@ -90,7 +90,10 @@ else
     echo "unable to check packages (dpkg not found)."
 fi
 
-echo "starting home setup (${#INSTALL[@]} files)..."
+INSTALL_SUCCESS_COUNT=0
+INSTALL_ERROR_COUNT=0
+INSTALL_ALREADY_LINKED=0
+echo "checking home setup (${#INSTALL[@]} files)..."
 for INSTALL_FILE in "${INSTALL[@]}"; do
     if [[ "${INSTALL_FILE}" =~ "=" ]]; then
         INSTALL_REQUIRED_BIN="${INSTALL_FILE#*=}"
@@ -108,67 +111,93 @@ for INSTALL_FILE in "${INSTALL[@]}"; do
         # install file may contain subdirs, so get the destination dir
         DST_DIR=$(dirname "${DST_PATH}")
 
+        MSG_STATUS=""
+        MSG_DETAIL=""
+        EXISTING_SYMLINK=""
+        # if destination exists, try to move/remove (if needed)
         if [[ -e "${DST_PATH}" ]]; then
-            # when the destination exists, handle some situations
             if [[ -h "${DST_PATH}" ]]; then
-                # symlink already exists: remove symlink
-                /bin/rm "${DST_PATH}"
+                EXISTING_SYMLINK=$(readlink --canonicalize-missing \
+                                            --no-newline \
+                                            --silent "${DST_PATH}")
+                if [[ "${EXISTING_SYMLINK}" != "${SRC_PATH}" ]]; then
+                    # symlink already exists, but points somewhere unexpected: remove symlink
+                    /bin/rm -f "${DST_PATH}"
+                fi
             elif [[ -f "${DST_PATH}" ]]; then
                 # non-symlink file already exists, so attempt backup
                 BAK_PATH="${DST_PATH}.bak"
-                if [[ -e "${BAK_PATH}" ]]; then
-                    # backup file already exists, don't be a hero, just skip
-                    echo "ERROR, unable to backup existing home file: ${DST_PATH}"
-                else
+                if [[ ! -e "${BAK_PATH}" ]]; then
                     # move existing file to backup
                     /bin/mv -f "${DST_PATH}" "${BAK_PATH}"
-                    echo "...created backup of existing file:" \
-                         "${CLR_YELLOW}${DST_PATH} -> ${BAK_PATH}${CLR_RESET}"
+                    MSG_DETAIL="${CLR_YELLOW}backup created: ${BAK_PATH}${CLR_RESET}"
                 fi
-            else
-                # don't try to install over non-file
-                echo "ERROR, found non-file: ${DST_PATH}"
             fi
-        else
-            if [[ ! -e "${DST_DIR}" ]]; then
-                /bin/mkdir -p "${DST_DIR}"
-            fi
+        elif [[ ! -e "${DST_DIR}" ]]; then
+            # create destination dirs if needed
+            /bin/mkdir -p "${DST_DIR}"
         fi
 
-        if [[ ! -d "${DST_DIR}" ]]; then
-            echo "ERROR: destination dir is invalid or unable to be created: ${DST_DIR}"
-            echo "ERROR: skipping file: ${SRC_PATH}"
+        if [[ -h "${DST_PATH}" ]]; then
+            if [[ "${EXISTING_SYMLINK}" == "${SRC_PATH}" ]]; then
+                INSTALL_ALREADY_LINKED=$((INSTALL_ALREADY_LINKED + 1))
+            else
+                INSTALL_ERROR_COUNT=$((INSTALL_ERROR_COUNT + 1))
+                MSG_STATUS="${CLR_RED}FAILED   "
+                MSG_DETAIL="unable to remove destination symlink"
+            fi
+        elif [[ ! -d "${DST_DIR}" ]]; then
+            INSTALL_ERROR_COUNT=$((INSTALL_ERROR_COUNT + 1))
+            MSG_STATUS="${CLR_RED}FAILED   "
+            MSG_DETAIL="unable to create destination dir"
         elif [[ -e "${DST_PATH}" ]]; then
-            # if the destination is (still) not clear, don't install
-            echo "ERROR: destination is (still) not clear: ${DST_PATH}"
-            echo "ERROR: skipping file: ${SRC_PATH}"
+            INSTALL_ERROR_COUNT=$((INSTALL_ERROR_COUNT + 1))
+            MSG_STATUS="${CLR_RED}FAILED   "
+            MSG_DETAIL="unable to move/backup destination file"
         else
-            # Replace path with relative path, if possible
+            # ready to attempt install
             if [[ ! -z "${REALPATH_BIN}" ]]; then
+                # replace path with relative path, if possible
                 RELATIVE_SRC=$("${REALPATH_BIN}" --relative-to="${DST_DIR}" "${SRC_PATH}")
                 if [[ ! -z "${RELATIVE_SRC}" ]]; then
                     SRC_PATH="${RELATIVE_SRC}"
                 fi
             fi
-            # When installing files which have a required binary, add additional message
+            # when installing files which have a required binary, add additional message
             if [[ ! -z "${INSTALL_REQUIRED_BIN}" ]] && [[ ! -z "${WHICH_BIN}" ]]; then
                 INSTALL_RUNTIME=$("${WHICH_BIN}" "${INSTALL_REQUIRED_BIN}" || echo)
                 if [[ -z "${INSTALL_RUNTIME}" ]] || [[ ! -f "${INSTALL_RUNTIME}" ]]; then
-                    # Runtime for this install does not exist
-                    INSTALL_MESSAGE="${CLR_RED}not found: ${INSTALL_REQUIRED_BIN}"
-                else
-                    # Runtime exists
-                    INSTALL_MESSAGE="${CLR_GREEN}used by: ${INSTALL_RUNTIME}"
+                    # runtime for this install does not exist
+                    MSG_DETAIL="${CLR_RED}not found: ${INSTALL_REQUIRED_BIN}${CLR_RESET}"
                 fi
-                INSTALL_MESSAGE="  [ ${INSTALL_MESSAGE}${CLR_RESET} ]"
-            else
-                INSTALL_MESSAGE=""
             fi
 
             # install time!
-            echo "installing ${DST_PATH}${INSTALL_MESSAGE}"
             ln -s "${SRC_PATH}" "${DST_PATH}"
+            INSTALL_SUCCESS_COUNT=$((INSTALL_SUCCESS_COUNT + 1))
+            MSG_STATUS="${CLR_GREEN}INSTALLED"
+        fi
+
+        if [[ ! -z "${MSG_STATUS}" ]]; then
+            if [[ -z "${MSG_DETAIL}" ]]; then
+                echo "  ${MSG_STATUS}${CLR_RESET}: ${DST_PATH}"
+            else
+                echo "  ${MSG_STATUS}${CLR_RESET}: ${DST_PATH} [ ${MSG_DETAIL} ]"
+            fi
         fi
     fi
 done
-echo "done."
+
+if [[ ${INSTALL_SUCCESS_COUNT} -eq 0 ]] && [[ ${INSTALL_ERROR_COUNT} -eq 0 ]]; then
+    echo "home setup complete:" \
+         "${INSTALL_ALREADY_LINKED} skipped (already setup)."
+elif [[ ${INSTALL_ERROR_COUNT} -eq 0 ]]; then
+    echo "home setup complete:" \
+         "${INSTALL_SUCCESS_COUNT} newly installed," \
+         "${INSTALL_ALREADY_LINKED} skipped (already setup)."
+else
+    echo "home setup not complete:" \
+         "${INSTALL_ERROR_COUNT} failed install," \
+         "${INSTALL_SUCCESS_COUNT} newly installed," \
+         "${INSTALL_ALREADY_LINKED} skipped (already setup)."
+fi
