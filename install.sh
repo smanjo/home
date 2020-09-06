@@ -64,8 +64,10 @@ if [[ ! -z "${DPKG_BIN}" ]]; then
     # loop through the packages. this requires a newline at the end of the packages file.
     while IFS= read -r PKGNAME; do
         # check if package is installed. we're only trying to give bare minimal package
-        # installed check, so we don't care about needed uprgades.
-        if ! "${DPKG_BIN}" -l "${PKGNAME}" >/dev/null 2>&1; then
+        # installed check, so we don't care about needed (version) uprgades.
+        PKG_STATUS=$("${DPKG_BIN}" --get-selections "${PKGNAME}" 2>/dev/null \
+                         | sed -E 's/^\S+\s+//')
+        if [[ "${PKG_STATUS}" != "install" ]]; then
             echo "  ${CLR_RED}MISSING${CLR_RESET}   : ${PKGNAME}"
             MISSING_COUNT=$((MISSING_COUNT + 1))
             MISSING_PKGS="${MISSING_PKGS} ${PKGNAME}"
@@ -78,7 +80,7 @@ if [[ ! -z "${DPKG_BIN}" ]]; then
     else
         # if missing packages, give message with install command. DO NOT INSTALL.
         # this script is intended to be lightweight and never require user input.
-        echo "missing ${MISSING_COUNT} packages, run this command to install:"
+        echo "missing ${MISSING_COUNT} package(s), run this command to install:"
         echo
         echo "${CLR_YELLOW}sudo apt install ${MISSING_PKGS}${CLR_RESET}"
         echo
