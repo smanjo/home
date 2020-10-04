@@ -12,6 +12,7 @@ htop
 iftop
 locales
 pwgen
+rename
 rsync
 unattended-upgrades
 wget
