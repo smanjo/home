@@ -91,20 +91,28 @@ esac
 #export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
 # Set our default ls options (used below in alias), see ls(1).
-LS_OPTIONS=("--almost-all" \
-                "-X" \
-                "--human-readable" \
-                "-v" \
-                "--tabsize=0" \
-                "--escape" \
-                "--indicator-style=slash" \
-                "--group-directories-first" \
-                "--time-style=+%Y%m%d.%H%M%S")
+if [[ "$(uname -s)" == "FreeBSD" ]]; then
+    LS_OPTIONS=("-A" \
+		    "-h" \
+		    "-b" \
+		    "-p" \
+		    "-G")
+else
+    LS_OPTIONS=("--almost-all" \
+		    "-X" \
+		    "--human-readable" \
+		    "-v" \
+		    "--tabsize=0" \
+		    "--escape" \
+		    "--indicator-style=slash" \
+		    "--group-directories-first" \
+		    "--time-style=+%Y%m%d.%H%M%S" \
+		    "--color=auto")
+fi
 
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-    LS_OPTIONS+=("--color=auto")
 fi
 
 LS_COLORS='rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;31:';
@@ -130,7 +138,7 @@ if ! shopt -oq posix; then
 fi
 
 # ls aliases
-alias ls="/bin/ls ${LS_OPTIONS[@]}"
+alias ls="$(which ls) ${LS_OPTIONS[@]}"
 alias ll='ls -l'
 alias lla='ll --all'
 alias l='ls -C'
@@ -141,8 +149,8 @@ alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 
-alias chmod='/bin/chmod --verbose'
-alias grep='/bin/grep --color=always'
+alias chmod="$(which chmod) --verbose"
+alias grep="$(which grep) --color=always"
 
 # our editor of choice.
 if [[ -f /usr/bin/emacs ]]; then

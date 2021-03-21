@@ -28,8 +28,8 @@ CLR_BR_MAGENTA=""
 CLR_BR_CYAN=""
 CLR_BR_WHITE=""
 
-if /usr/bin/test -t 1; then # test that file descriptor 1 (stdout) is a real term
-    TERM_NCOLORS=$(/usr/bin/tput colors)
+if $(which test) -t 1; then # test that file descriptor 1 (stdout) is a real term
+    TERM_NCOLORS=$($(which tput) colors)
     if [[ ! -z "${TERM_NCOLORS}" ]] && [[ "${TERM_NCOLORS}" -gt 8 ]]; then
         # We have a color term, set codes
         CLR_ESC=$'\033'
@@ -103,7 +103,11 @@ fi
 # Show who is logged on and what they are doing
 echo -e "\n${CLR_BR_GREEN}`/usr/bin/w`${CLR_RESET}"
 # Report file system disk space usage (excluding virtual devs)
-echo -e "\n${CLR_BR_YELLOW}`/bin/df -h -x tmpfs -x udev -x devtmpfs`${CLR_RESET}"
+if [[ "$(uname -s)" == "FreeBSD" ]]; then
+    echo -e "\n${CLR_BR_YELLOW}`/bin/df -h -t notmpfs,udev,devtmpfs,devfs,fdescfs`${CLR_RESET}"
+else
+    echo -e "\n${CLR_BR_YELLOW}`/bin/df -h -x tmpfs -x udev -x devtmpfs`${CLR_RESET}"
+fi
 # Warm about required reboot, if needed
 if [[ -f /var/run/reboot-required ]]; then
     if [[ -f /var/run/reboot-required.pkgs ]]; then

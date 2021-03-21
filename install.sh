@@ -30,12 +30,25 @@ DST_TOP="${HOME}"
 # check if some commands exist (allows graceful feature loss)
 if [[ -f "/usr/bin/which" ]]; then
     WHICH_BIN="/usr/bin/which"
-    REALPATH_BIN=$(${WHICH_BIN} realpath)
-    DPKG_BIN=$(${WHICH_BIN} dpkg)
+    REALPATH_BIN="$(${WHICH_BIN} realpath || echo)"
+    DPKG_BIN="$(${WHICH_BIN} dpkg || echo)"
+    TEST_BIN="$(${WHICH_BIN} test || echo)"
+    TPUT_BIN="$(${WHICH_BIN} tput || echo)"
+    UNAME_BIN="$(${WHICH_BIN} uname || echo)"
 else
     WHICH_BIN=""
     REALPATH_BIN=""
     DPKG_BIN=""
+    TEST_BIN=""
+    TPUT_BIN=""
+    UNAME_BIN=""
+fi
+
+# get unix type, "FreeBSD" or "Linux"
+if [[ ! -z "${UNAME_BIN}" ]]; then
+    OS_NAME="$(${UNAME_BIN}) -s"
+else
+    OS_NAME=""
 fi
 
 # setup color codes when possible
@@ -44,8 +57,8 @@ CLR_GREEN=""
 CLR_RED=""
 CLR_YELLOW=""
 CLR_RESET=""
-if /usr/bin/test -t 1; then # test that file descriptor 1 (stdout) is a real term
-    TERM_NCOLORS=$(/usr/bin/tput colors)
+if ${TEST_BIN} -t 1; then # test that file descriptor 1 (stdout) is a real term
+    TERM_NCOLORS=$(${TPUT_BIN} colors)
     if [[ ! -z "${TERM_NCOLORS}" ]] && [[ "${TERM_NCOLORS}" -gt 8 ]]; then
         CLR_ESC=$'\033'
         CLR_GREEN="${CLR_ESC}[92m"
@@ -117,9 +130,7 @@ for INSTALL_FILE in "${INSTALL[@]}"; do
         # if destination exists, try to move/remove (if needed)
         if [[ -e "${DST_PATH}" ]]; then
             if [[ -h "${DST_PATH}" ]]; then
-                EXISTING_SYMLINK=$(readlink --canonicalize-missing \
-                                            --no-newline \
-                                            --silent "${DST_PATH}")
+                EXISTING_SYMLINK=$(readlink -n "${DST_PATH}")
                 if [[ "${EXISTING_SYMLINK}" != "${SRC_PATH}" ]]; then
                     # symlink already exists, but points somewhere unexpected: remove symlink
                     /bin/rm -f "${DST_PATH}"
@@ -156,7 +167,7 @@ for INSTALL_FILE in "${INSTALL[@]}"; do
             MSG_DETAIL="unable to move/backup destination file"
         else
             # ready to attempt install
-            if [[ ! -z "${REALPATH_BIN}" ]]; then
+            if [[ "${OS_NAME}" == "Linux" ]] && [[ ! -z "${REALPATH_BIN}" ]]; then
                 # replace path with relative path, if possible
                 RELATIVE_SRC=$("${REALPATH_BIN}" --relative-to="${DST_DIR}" "${SRC_PATH}")
                 if [[ ! -z "${RELATIVE_SRC}" ]]; then
