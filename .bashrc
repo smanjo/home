@@ -91,24 +91,26 @@ esac
 #export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
 # Set our default ls options (used below in alias), see ls(1).
-if [[ "$(uname -s)" == "FreeBSD" ]]; then
-    LS_OPTIONS=("-A" \
-		    "-h" \
-		    "-b" \
-		    "-p" \
-		    "-G")
-else
-    LS_OPTIONS=("--almost-all" \
-		    "-X" \
-		    "--human-readable" \
-		    "-v" \
-		    "--tabsize=0" \
-		    "--escape" \
-		    "--indicator-style=slash" \
-		    "--group-directories-first" \
-		    "--time-style=+%Y%m%d.%H%M%S" \
-		    "--color=auto")
-fi
+case "$(uname -s)" in
+    "FreeBSD" | "Darwin")
+        LS_OPTIONS=("-A" \
+                        "-h" \
+                        "-b" \
+                        "-p" \
+                        "-G")
+        ;;
+    *)
+        LS_OPTIONS=("--almost-all" \
+                        "-X" \
+                        "--human-readable" \
+                        "-v" \
+                        "--tabsize=0" \
+                        "--escape" \
+                        "--indicator-style=slash" \
+                        "--group-directories-first" \
+                        "--time-style=+%Y%m%d.%H%M%S" \
+                        "--color=auto")
+esac
 
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
@@ -138,7 +140,13 @@ if ! shopt -oq posix; then
 fi
 
 # ls aliases
-alias ls="$(which ls) ${LS_OPTIONS[@]}"
+LS_BIN="$(which ls)"
+# Check if Homebrew coreutils is installed (eg. brew install coreutils)
+if [[ -f /opt/homebrew/bin/gls ]]; then
+    LS_BIN="/opt/homebrew/bin/gls"
+fi
+
+alias ls="${LS_BIN} ${LS_OPTIONS[@]}"
 alias ll='ls -l'
 alias lla='ll --all'
 alias l='ls -C'

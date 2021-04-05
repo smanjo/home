@@ -103,11 +103,18 @@ fi
 # Show who is logged on and what they are doing
 echo -e "\n${CLR_BR_GREEN}`/usr/bin/w`${CLR_RESET}"
 # Report file system disk space usage (excluding virtual devs)
-if [[ "$(uname -s)" == "FreeBSD" ]]; then
-    echo -e "\n${CLR_BR_YELLOW}`/bin/df -h -t notmpfs,udev,devtmpfs,devfs,fdescfs`${CLR_RESET}"
-else
-    echo -e "\n${CLR_BR_YELLOW}`/bin/df -h -x tmpfs -x udev -x devtmpfs`${CLR_RESET}"
-fi
+case "$(uname -s)" in
+    "Darwin")
+        echo -e "\n${CLR_BR_YELLOW}`/bin/df -h -t notmpfs,udev,devtmpfs,devfs,fdescfs`${CLR_RESET}"
+        ;;
+    "FreeBSD")
+        echo -e "\n${CLR_BR_YELLOW}`/bin/df -h -t notmpfs,udev,devtmpfs,devfs,fdescfs`${CLR_RESET}"
+        ;;
+    "Linux")
+        echo -e "\n${CLR_BR_YELLOW}`/bin/df -h -x tmpfs -x udev -x devtmpfs`${CLR_RESET}"
+        ;;
+esac
+
 # Warm about required reboot, if needed
 if [[ -f /var/run/reboot-required ]]; then
     if [[ -f /var/run/reboot-required.pkgs ]]; then
@@ -115,4 +122,8 @@ if [[ -f /var/run/reboot-required ]]; then
                 "\n`sed -e 's/^/  /' /var/run/reboot-required.pkgs`${CLR_RESET}"
     fi
     echo -e "\n${CLR_BR_RED}>>>>>>>>>>> REBOOT REQUIRED <<<<<<<<<<${CLR_RESET}"
+fi
+
+if [[ -f "$HOME/.profile.local" ]]; then
+    source "$HOME/.profile.local"
 fi

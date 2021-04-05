@@ -2,7 +2,7 @@
 set -e
 set -u
 
-# install.sh: setup user's home to my liking. has two main features:
+# install.sh: setup current user's home. has two main features:
 #     [1] checks system for listed packages (see packages.lst). these packages are intended to
 #         to be a baseline of packages wanted on all systems.
 #     [2] creates symlinks to config files in this directory from the user's home directory.
@@ -27,22 +27,21 @@ INSTALL=(
 RUN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 DST_TOP="${HOME}"
 
-# check if some commands exist (allows graceful feature loss)
 if [[ -f "/usr/bin/which" ]]; then
     WHICH_BIN="/usr/bin/which"
-    REALPATH_BIN="$(${WHICH_BIN} realpath || echo)"
-    DPKG_BIN="$(${WHICH_BIN} dpkg || echo)"
-    TEST_BIN="$(${WHICH_BIN} test || echo)"
-    TPUT_BIN="$(${WHICH_BIN} tput || echo)"
-    UNAME_BIN="$(${WHICH_BIN} uname || echo)"
+elif [[ -f "/bin/which" ]]; then
+    WHICH_BIN="/bin/which"
 else
-    WHICH_BIN=""
-    REALPATH_BIN=""
-    DPKG_BIN=""
-    TEST_BIN=""
-    TPUT_BIN=""
-    UNAME_BIN=""
+    echo "Unable to find 'which' command, exiting." >&2
+    exit 1
 fi
+
+# check if some commands exist (allows graceful feature loss)
+REALPATH_BIN="$(${WHICH_BIN} realpath || echo)"
+DPKG_BIN="$(${WHICH_BIN} dpkg || echo)"
+TEST_BIN="$(${WHICH_BIN} test || echo)"
+TPUT_BIN="$(${WHICH_BIN} tput || echo)"
+UNAME_BIN="$(${WHICH_BIN} uname || echo)"
 
 # get unix type, "FreeBSD" or "Linux"
 if [[ ! -z "${UNAME_BIN}" ]]; then
