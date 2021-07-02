@@ -6,6 +6,7 @@ curl
 dnsutils
 elpa-markdown-mode
 elpa-web-mode
+elpa-rust-mode
 emacs
 git
 htop
